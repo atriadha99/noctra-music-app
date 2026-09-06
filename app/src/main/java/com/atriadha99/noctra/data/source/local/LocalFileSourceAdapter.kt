@@ -70,14 +70,17 @@ class LocalFileSourceAdapter @Inject constructor(
             
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idColumn)
-                val title = cursor.getString(titleColumn)
-                val artist = cursor.getString(artistColumn)
+                val title = cursor.getString(titleColumn) ?: "Unknown Title"
+                val artist = cursor.getString(artistColumn) ?: "Unknown Artist"
                 val data = cursor.getString(dataColumn)
                 val duration = cursor.getLong(durationColumn)
                 val albumId = cursor.getLong(albumIdColumn)
                 
-                // Art URI placeholder for local media store
-                val artUri = "content://media/external/audio/albumart/$albumId"
+                // Get album art URI
+                val albumArtUri = android.content.ContentUris.withAppendedId(
+                    android.net.Uri.parse("content://media/external/audio/albumart"),
+                    albumId
+                ).toString()
                 
                 tracks.add(
                     Track(
@@ -87,7 +90,7 @@ class LocalFileSourceAdapter @Inject constructor(
                         artist = artist,
                         durationMs = duration,
                         streamUrl = data, // File path
-                        coverUrl = artUri
+                        coverUrl = albumArtUri
                     )
                 )
             }
