@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -64,6 +65,20 @@ fun MainApp() {
                 composable("Explore") { ExploreScreen() }
                 composable("Library") { LibraryScreen() }
                 composable("Settings") { SettingsScreen() }
+                composable("NowPlaying") { 
+                    com.atriadha99.noctra.presentation.screens.NowPlayingScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    ) 
+                }
+            }
+            
+            // Floating MiniPlayer above everything except full screen NowPlaying
+            val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+            if (currentRoute != "NowPlaying") {
+                com.atriadha99.noctra.presentation.components.MiniPlayer(
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    onNavigateToNowPlaying = { navController.navigate("NowPlaying") }
+                )
             }
         }
     }

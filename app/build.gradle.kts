@@ -110,4 +110,5 @@ dependencies {
   implementation(libs.haze)
   implementation(libs.haze.materials)
   implementation(libs.palette)
+  implementation("androidx.compose.material:material-icons-extended:1.7.0")
 }
