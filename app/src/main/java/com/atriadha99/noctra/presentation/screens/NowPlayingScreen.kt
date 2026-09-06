@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -44,9 +46,25 @@ import androidx.navigation.NavController
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NowPlayingScreen(
+    viewModel: com.atriadha99.noctra.ui.main.MainViewModel? = null,
     onNavigateBack: (() -> Unit)? = null // Made optional so preview works, usually injected via MainApp
 ) {
-    var progress by remember { mutableFloatStateOf(0.3f) }
+    val isPlaying by viewModel?.isPlaying?.collectAsState(initial = false) ?: androidx.compose.runtime.mutableStateOf(false)
+    val currentPosition by viewModel?.currentPosition?.collectAsState(initial = 0L) ?: androidx.compose.runtime.mutableStateOf(0L)
+    val duration by viewModel?.duration?.collectAsState(initial = 0L) ?: androidx.compose.runtime.mutableStateOf(0L)
+    val currentTitle by viewModel?.currentTrackTitle?.collectAsState(initial = null) ?: androidx.compose.runtime.mutableStateOf(null)
+    val currentArtist by viewModel?.currentTrackArtist?.collectAsState(initial = null) ?: androidx.compose.runtime.mutableStateOf(null)
+
+    // Calculate progress as a float from 0 to 1
+    val progress = if (duration > 0) (currentPosition.toFloat() / duration.toFloat()).coerceIn(0f, 1f) else 0f
+    
+    // Format duration helper
+    fun formatTime(ms: Long): String {
+        val totalSeconds = ms / 1000
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return String.format("%d:%02d", minutes, seconds)
+    }
 
     // Placeholder for actual Haze blur effect
     val dynamicGradient = Brush.verticalGradient(
@@ -107,7 +125,7 @@ fun NowPlayingScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "NOCTRA Anthem",
+                        text = currentTitle ?: "NOCTRA Anthem",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.White,
@@ -115,7 +133,7 @@ fun NowPlayingScreen(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "Andika Triadha",
+                        text = currentArtist ?: "Andika Triadha",
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White.copy(alpha = 0.7f),
                         maxLines = 1,
@@ -132,15 +150,18 @@ fun NowPlayingScreen(
             // Progress Bar
             Slider(
                 value = progress,
-                onValueChange = { progress = it },
+                onValueChange = { newProgress -> 
+                    val seekPos = (newProgress * duration).toLong()
+                    viewModel?.seekTo(seekPos)
+                },
                 modifier = Modifier.fillMaxWidth()
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("1:20", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.5f))
-                Text("-3:40", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.5f))
+                Text(formatTime(currentPosition), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.5f))
+                Text(formatTime(duration), style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.5f))
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -151,7 +172,7 @@ fun NowPlayingScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { /* TODO */ }, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = { viewModel?.skipToPrevious() }, modifier = Modifier.size(48.dp)) {
                     Icon(Icons.Filled.SkipPrevious, contentDescription = "Previous", tint = Color.White, modifier = Modifier.size(36.dp))
                 }
                 Box(
@@ -162,9 +183,16 @@ fun NowPlayingScreen(
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = "Play", tint = Color.White, modifier = Modifier.size(40.dp))
+                    IconButton(onClick = { viewModel?.playPause() }) {
+                        Icon(
+                            imageVector = if (isPlaying) androidx.compose.material.icons.filled.Pause else Icons.Filled.PlayArrow, 
+                            contentDescription = "Play/Pause", 
+                            tint = Color.White, 
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
                 }
-                IconButton(onClick = { /* TODO */ }, modifier = Modifier.size(48.dp)) {
+                IconButton(onClick = { viewModel?.skipToNext() }, modifier = Modifier.size(48.dp)) {
                     Icon(Icons.Filled.SkipNext, contentDescription = "Next", tint = Color.White, modifier = Modifier.size(36.dp))
                 }
             }

@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,11 +45,15 @@ import com.atriadha99.noctra.presentation.theme.LogoOrangeDark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    viewModel: com.atriadha99.noctra.ui.main.MainViewModel? = null
+) {
     val scrollState = rememberScrollState()
     
     var selectedFilter by remember { mutableStateOf("Semua") }
     val filters = listOf("Semua", "Musik", "Podcast")
+    
+    val localTracks by viewModel?.localTracks?.collectAsState(initial = emptyList()) ?: remember { mutableStateOf(emptyList()) }
 
     Column(
         modifier = Modifier
@@ -135,9 +140,13 @@ fun HomeScreen() {
             ) {
                 item {
                     GradientCard(
-                        title = "Musik Lokal",
+                        title = "Musik Lokal (${localTracks.size} Lagu)",
                         gradientColors = listOf(LogoOrange, LogoOrangeDark),
-                        onClick = { /* TODO */ }
+                        onClick = { 
+                            if (localTracks.isNotEmpty()) {
+                                viewModel?.playPlaylist(localTracks)
+                            }
+                        }
                     )
                 }
                 item {

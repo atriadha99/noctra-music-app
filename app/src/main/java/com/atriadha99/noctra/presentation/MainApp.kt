@@ -28,11 +28,18 @@ import com.atriadha99.noctra.presentation.screens.ExploreScreen
 import com.atriadha99.noctra.presentation.screens.SettingsScreen
 
 @Composable
-fun MainApp() {
+fun MainApp(
+    viewModel: com.atriadha99.noctra.ui.main.MainViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+) {
     val navController = rememberNavController()
     
+    // Automatically load local music when MainApp starts
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        viewModel.loadLocalMusic()
+    }
+    
     val screens = listOf("Home", "Explore", "Library", "Settings")
-    val icons = listOf(Icons.Filled.Home, Icons.Filled.Search, Icons.Filled.List, Icons.Filled.Settings)
+    val icons = listOf(Icons.AutoMirrored.Filled.List, Icons.Filled.Search, Icons.Filled.List, Icons.Filled.Settings)
 
     Scaffold(
         bottomBar = {
@@ -41,8 +48,9 @@ fun MainApp() {
                 val currentRoute = navBackStackEntry?.destination?.route
 
                 screens.forEachIndexed { index, screen ->
+                    val icon = if (index == 0) Icons.Filled.Home else icons[index]
                     NavigationBarItem(
-                        icon = { Icon(icons[index], contentDescription = screen) },
+                        icon = { Icon(icon, contentDescription = screen) },
                         label = { Text(screen) },
                         selected = currentRoute == screen,
                         onClick = {
@@ -61,12 +69,13 @@ fun MainApp() {
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
             NavHost(navController, startDestination = "Home") {
-                composable("Home") { HomeScreen() }
+                composable("Home") { HomeScreen(viewModel = viewModel) }
                 composable("Explore") { ExploreScreen() }
                 composable("Library") { LibraryScreen() }
                 composable("Settings") { SettingsScreen() }
                 composable("NowPlaying") { 
                     com.atriadha99.noctra.presentation.screens.NowPlayingScreen(
+                        viewModel = viewModel,
                         onNavigateBack = { navController.popBackStack() }
                     ) 
                 }
@@ -76,6 +85,7 @@ fun MainApp() {
             val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
             if (currentRoute != "NowPlaying") {
                 com.atriadha99.noctra.presentation.components.MiniPlayer(
+                    viewModel = viewModel,
                     modifier = Modifier.align(Alignment.BottomCenter),
                     onNavigateToNowPlaying = { navController.navigate("NowPlaying") }
                 )

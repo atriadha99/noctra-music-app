@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,11 +28,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.Column
+
 @Composable
 fun MiniPlayer(
+    viewModel: com.atriadha99.noctra.ui.main.MainViewModel? = null,
     modifier: Modifier = Modifier,
     onNavigateToNowPlaying: () -> Unit
 ) {
+    val isPlaying by viewModel?.isPlaying?.collectAsState(initial = false) ?: androidx.compose.runtime.mutableStateOf(false)
+    val currentTitle by viewModel?.currentTrackTitle?.collectAsState(initial = null) ?: androidx.compose.runtime.mutableStateOf(null)
+    val currentArtist by viewModel?.currentTrackArtist?.collectAsState(initial = null) ?: androidx.compose.runtime.mutableStateOf(null)
+
     GlassCard(
         modifier = modifier
             .fillMaxWidth()
@@ -57,25 +67,43 @@ fun MiniPlayer(
             Spacer(modifier = Modifier.width(12.dp))
             
             // Track Info
-            Row(
+            Column(
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Track Title (WIP)",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = currentTitle ?: "Not Playing",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = "Play", tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Filled.SkipNext, contentDescription = "Next", tint = MaterialTheme.colorScheme.onSurface)
-                    }
+                Text(
+                    text = currentArtist ?: "NOCTRA",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            
+            // Controls
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = { viewModel?.playPause() }) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = "Play/Pause",
+                        tint = Color.White
+                    )
+                }
+                IconButton(onClick = { viewModel?.skipToNext() }) {
+                    Icon(
+                        imageVector = Icons.Filled.SkipNext,
+                        contentDescription = "Next",
+                        tint = Color.White
+                    )
                 }
             }
         }
