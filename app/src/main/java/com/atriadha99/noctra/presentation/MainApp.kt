@@ -39,7 +39,7 @@ fun MainApp(
     }
     
     val screens = listOf("Home", "Explore", "Library", "Settings")
-    val icons = listOf(Icons.AutoMirrored.Filled.List, Icons.Filled.Search, Icons.Filled.List, Icons.Filled.Settings)
+    val icons = listOf(Icons.Filled.List, Icons.Filled.Search, Icons.Filled.List, Icons.Filled.Settings)
 
     Scaffold(
         bottomBar = {
@@ -72,7 +72,7 @@ fun MainApp(
                 composable("Home") { HomeScreen(viewModel = viewModel) }
                 composable("Explore") { ExploreScreen() }
                 composable("Library") { LibraryScreen() }
-                composable("Settings") { SettingsScreen() }
+                composable("Settings") { SettingsScreen(viewModel = viewModel) }
                 composable("NowPlaying") { 
                     com.atriadha99.noctra.presentation.screens.NowPlayingScreen(
                         viewModel = viewModel,

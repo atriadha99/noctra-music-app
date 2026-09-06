@@ -185,7 +185,7 @@ fun NowPlayingScreen(
                 ) {
                     IconButton(onClick = { viewModel?.playPause() }) {
                         Icon(
-                            imageVector = if (isPlaying) androidx.compose.material.icons.filled.Pause else Icons.Filled.PlayArrow, 
+                            imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, 
                             contentDescription = "Play/Pause", 
                             tint = Color.White, 
                             modifier = Modifier.size(40.dp)
