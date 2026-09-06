@@ -2,6 +2,7 @@ package com.atriadha99.noctra.data.playback
 
 import android.content.ComponentName
 import android.content.Context
+import android.os.CountDownTimer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
@@ -36,6 +37,17 @@ class PlaybackManager @Inject constructor(
     private val _currentTrackArtist = MutableStateFlow<String?>(null)
     val currentTrackArtist: StateFlow<String?> = _currentTrackArtist.asStateFlow()
 
+    private val _isShuffleEnabled = MutableStateFlow(false)
+    val isShuffleEnabled: StateFlow<Boolean> = _isShuffleEnabled.asStateFlow()
+
+    private val _repeatMode = MutableStateFlow(Player.REPEAT_MODE_OFF)
+    val repeatMode: StateFlow<Int> = _repeatMode.asStateFlow()
+
+    private val _sleepTimerMinutesRemaining = MutableStateFlow<Int?>(null)
+    val sleepTimerMinutesRemaining: StateFlow<Int?> = _sleepTimerMinutesRemaining.asStateFlow()
+
+    private var sleepTimer: CountDownTimer? = null
+
     init {
         val sessionToken = SessionToken(context, ComponentName(context, PlaybackService::class.java))
         controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
@@ -68,6 +80,14 @@ class PlaybackManager @Inject constructor(
                     _duration.value = controller.duration.coerceAtLeast(0L)
                 }
             }
+
+            override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                _isShuffleEnabled.value = shuffleModeEnabled
+            }
+
+            override fun onRepeatModeChanged(repeatMode: Int) {
+                _repeatMode.value = repeatMode
+            }
         })
     }
     
@@ -85,6 +105,14 @@ class PlaybackManager @Inject constructor(
         mediaController?.pause()
     }
 
+    fun togglePlayPause() {
+        if (_isPlaying.value) {
+            pause()
+        } else {
+            play()
+        }
+    }
+
     fun skipToNext() {
         mediaController?.seekToNextMediaItem()
     }
@@ -95,6 +123,51 @@ class PlaybackManager @Inject constructor(
 
     fun seekTo(position: Long) {
         mediaController?.seekTo(position)
+    }
+
+    fun toggleShuffle() {
+        mediaController?.let {
+            val newState = !it.shuffleModeEnabled
+            it.shuffleModeEnabled = newState
+            _isShuffleEnabled.value = newState
+        }
+    }
+
+    fun toggleRepeat() {
+        mediaController?.let {
+            val nextMode = when (it.repeatMode) {
+                Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ALL
+                Player.REPEAT_MODE_ALL -> Player.REPEAT_MODE_ONE
+                else -> Player.REPEAT_MODE_OFF
+            }
+            it.repeatMode = nextMode
+            _repeatMode.value = nextMode
+        }
+    }
+
+    fun startSleepTimer(minutes: Int) {
+        cancelSleepTimer()
+        if (minutes <= 0) return
+
+        val totalMillis = minutes * 60 * 1000L
+        _sleepTimerMinutesRemaining.value = minutes
+
+        sleepTimer = object : CountDownTimer(totalMillis, 60 * 1000L) {
+            override fun onTick(millisUntilFinished: Long) {
+                _sleepTimerMinutesRemaining.value = (millisUntilFinished / (60 * 1000L)).toInt() + 1
+            }
+
+            override fun onFinish() {
+                _sleepTimerMinutesRemaining.value = null
+                pause()
+            }
+        }.start()
+    }
+
+    fun cancelSleepTimer() {
+        sleepTimer?.cancel()
+        sleepTimer = null
+        _sleepTimerMinutesRemaining.value = null
     }
     
     fun playMediaItem(mediaItem: MediaItem) {
@@ -110,6 +183,7 @@ class PlaybackManager @Inject constructor(
     }
 
     fun release() {
+        cancelSleepTimer()
         controllerFuture?.let { MediaController.releaseFuture(it) }
     }
 }
