@@ -59,7 +59,7 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
-            .padding(top = 48.dp, bottom = 80.dp) // padding for top status bar and bottom nav
+            .padding(top = 48.dp, bottom = 160.dp) // padding for top status bar, bottom nav + mini player
     ) {
         // Header & Avatar
         Row(
