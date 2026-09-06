@@ -94,6 +94,7 @@ dependencies {
   implementation(libs.room.runtime)
   implementation(libs.room.ktx)
   kapt(libs.room.compiler)
+  kapt("org.xerial:sqlite-jdbc:3.45.1.0")
 
   // Media3
   implementation(libs.media3.exoplayer)
